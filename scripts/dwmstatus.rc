@@ -1,0 +1,4 @@
+#!/bin/rc
+
+dt=`{ date +'%d %b [%a] %H:%M:%S' }
+xsetroot -name $"dt
