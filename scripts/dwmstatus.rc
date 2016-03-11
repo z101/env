@@ -1,4 +1,5 @@
 #!/bin/rc
 
+host=`{ hostname }
 dt=`{ date +'%d %b [%a] %H:%M:%S' }
-xsetroot -name $"dt
+xsetroot -name $host^' | '^$"dt
