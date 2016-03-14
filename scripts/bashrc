@@ -32,5 +32,5 @@ PS1=$'\[\e[38;5;243m\]\h:\u\[\e[0m\] \[\033[38;5;243m\]\w\[\033[0m\]\n\u2514\u25
 PATH=$PLAN9/bin:$PATH
 MANPATH=$PLAN9/share/man:$MANPATH
 
-alias ls='ls --color=auto'
-alias grep='grep --color=auto'
+alias ls='/bin/ls --color=auto'
+alias grep='/bin/grep --color=auto'
