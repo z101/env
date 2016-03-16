@@ -1,5 +1,5 @@
-#!/bin/rc
+#!/usr/local/plan9/bin/rc
 
 host=`{ hostname }
-dt=`{ date +'%d %b [%a] %H:%M:%S' }
-xsetroot -name $host^' | '^$"dt
+dtf=`{ /bin/date +'%Y.%m.%d.%u.\c6%H:%M\c0:%S' }
+xsetroot -name ' \c6'^$host^'\c0 | '^$"dtf^' '
