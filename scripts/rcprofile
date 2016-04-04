@@ -1,7 +1,7 @@
 PATH=$PLAN9/bin:$PATH
 MANPATH=$PLAN9/share/man
 
-fn lsf { ls -F }
+fn ls { builtin ls -F $* }
 
 tabs 4
 clear
