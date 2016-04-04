@@ -1,0 +1,6 @@
+PATH=$PLAN9/bin:$PATH
+MANPATH=$PLAN9/share/man
+
+fn lsf { ls -F }
+
+tabs -4 >/dev/null
