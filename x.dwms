@@ -1,5 +1,8 @@
 #!/usr/local/plan9/bin/rc
 
+# dwm status
+# $home/.dwms
+
 host=`{ hostname }
 dtf=`{ /bin/date +'%Y.%m.%d.%u.\c6%H:%M\c0:%S' }
 xsetroot -name ' \c6'^$host^'\c0 | '^$"dtf^' '
