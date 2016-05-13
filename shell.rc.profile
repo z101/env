@@ -26,5 +26,13 @@ fn zp {
 	}
 }
 
+if (test -f $home/lib/profile.local)
+	. $home/lib/profile.local
+
 tabs 4
 clear
+host=`{ hostname }
+cdir=`{ pwd }
+dt=`{ date }
+echo $"host^' | '^$"cdir^' | '^$"dt
+echo
