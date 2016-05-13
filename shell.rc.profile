@@ -2,7 +2,7 @@
 # $home/lib/profile
 
 PATH=$PLAN9/bin:$PATH
-MANPATH=$PLAN9/share/man
+MANPATH=$PLAN9/share/man:/usr/share/man
 
 fn ls { builtin ls -F $* }
 fn zg { /bin/grep -ir $1 $2 }
