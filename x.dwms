@@ -3,6 +3,18 @@
 # dwm status
 # $home/.dwms
 
-host=`{ hostname }
-dtf=`{ /bin/date +'%Y.%m.%d.%u.\c6%H:%M\c0:%S' }
-xsetroot -name ' \c6'^$host^'\c0 | '^$"dtf^' '
+acpib=`{ acpi -b }
+bat=`{ echo $acpib | sed 's/^.*(([0-9])|([0-9][0-9])|([0-9][0-9][0-9]))%.*$/\1/' }
+batrem=`{ echo $acpib | sed 's/^.* ([0-9][0-9]:[0-9][0-9]).*$/\1/' }
+acind=''
+if (~ $acpib *Charging*)
+	acind=~
+if (test $bat -ge 10 -o -n $acind) {
+	batc='\c1'^$"acind^' '^$"bat^'%\c0 '^$"batrem
+}
+if not {
+	batc='\c3'^$"bat^'% '^$"batrem^'\c0'
+}
+dt=`{ date | sed 's/^.* ([0-9][0-9]:[0-9][0-9]).*$/\1/' }
+dtc='\c1'^$"dt
+xsetroot -name ' '^$"batc^' | '^$"dtc
