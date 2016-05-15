@@ -1,11 +1,38 @@
 # rc shell profile
 # $home/lib/profile
 
-prompt=('; '^`{ hostname }^' '^`{pwd}^' ' '	')
-
 PATH=$PLAN9/bin:$PATH
 MANPATH=$PLAN9/share/man:/usr/share/man
 
+ps1='; '
+hname=`{hostname}
+tab='	'
+
+fn cd {
+	builtin cd $1 &&
+	switch($#*){
+	case 0
+		dir=$home
+		prompt=($hname^$ps1 $tab)
+	case *
+		switch($1){
+		case /*
+			dir=$1
+			prompt=($hname^' '^`{basename `{pwd}}^$ps1 $tab)
+		case */* ..*
+			dir=()
+			prompt=($hname^' '^`{basename `{pwd}}^$ps1 $tab)
+		case *
+			dir=()
+			prompt=($hname^' '^`{basename `{pwd}}^$ps1 $tab)
+		}
+	}
+}
+fn pwd {
+	if(~ $#dir 0)
+		dir=`{/bin/pwd}
+	echo $dir
+}
 fn ls { builtin ls -F $* }
 fn zg { /bin/grep -ir $1 $2 }
 fn zp {
@@ -32,4 +59,5 @@ if (test -f $home/lib/profile.local)
 	. $home/lib/profile.local
 
 tabs 4
+cd
 clear
