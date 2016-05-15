@@ -1,6 +1,8 @@
 # rc shell profile
 # $home/lib/profile
 
+prompt=('; '^`{ hostname }^' '^`{pwd}^' ' '	')
+
 PATH=$PLAN9/bin:$PATH
 MANPATH=$PLAN9/share/man:/usr/share/man
 
@@ -31,8 +33,3 @@ if (test -f $home/lib/profile.local)
 
 tabs 4
 clear
-host=`{ hostname }
-cdir=`{ pwd }
-dt=`{ date }
-echo $"host^' | '^$"cdir^' | '^$"dt
-echo
