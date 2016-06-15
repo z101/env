@@ -8,6 +8,16 @@ ps1='; '
 hname=`{hostname}
 tab='	'
 
+fn setprompt {
+	if(~ `{pwd} '/')
+		prompt=($hname^' /'^$ps1 $tab)
+	if not {
+		ifs='
+' { ppt=$hname^' '^`{basename `{pwd}}^$ps1 }
+		prompt=($ppt $tab)
+	}
+}
+
 fn cd {
 	builtin cd $1 &&
 	switch($#*){
@@ -18,19 +28,13 @@ fn cd {
 		switch($1){
 		case /*
 			dir=$1
-			cwd=`{pwd}
-			base=`{basename $"cwd}
-			prompt=($hname^' '^$"base^$ps1 $tab)
+			setprompt
 		case */* ..*
 			dir=()
-			cwd=`{pwd}
-			base=`{basename $"cwd}
-			prompt=($hname^' '^$"base^$ps1 $tab)
+			setprompt
 		case *
 			dir=()
-			cwd=`{pwd}
-			base=`{basename $"cwd}
-			prompt=($hname^' '^$"base^$ps1 $tab)
+			setprompt
 		}
 	}
 }
