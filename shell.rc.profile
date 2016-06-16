@@ -18,13 +18,19 @@ fn cd {
 		switch($1){
 		case /*
 			dir=$1
-			prompt=($hname^' '^`{basename `{pwd}}^$ps1 $tab)
+			cwd=`{pwd}
+			base=`{basename $"cwd}
+			prompt=($hname^' '^$"base^$ps1 $tab)
 		case */* ..*
 			dir=()
-			prompt=($hname^' '^`{basename `{pwd}}^$ps1 $tab)
+			cwd=`{pwd}
+			base=`{basename $"cwd}
+			prompt=($hname^' '^$"base^$ps1 $tab)
 		case *
 			dir=()
-			prompt=($hname^' '^`{basename `{pwd}}^$ps1 $tab)
+			cwd=`{pwd}
+			base=`{basename $"cwd}
+			prompt=($hname^' '^$"base^$ps1 $tab)
 		}
 	}
 }
