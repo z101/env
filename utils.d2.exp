@@ -1,0 +1,19 @@
+#!/usr/local/plan9/bin/rc
+
+root='https://www.drive2.ru'
+store=$home/d2/exp
+prev='https://www.drive2.ru/experience/nissan/g1516/?from=0'
+file='1'
+
+while(! ~ $#prev 0){
+	p=$"store'/'$"file
+	l=$"file'; '$"prev
+	curl -Lo $p $prev >/dev/null >[2=1]
+	prev=()
+	prev=`{ sed -n -e '/class="c-pager__link.*редыд/ {
+		s|.*href="([^"]+)".*|'$root'\1|p
+		q
+	}' $p }
+	file=`{ echo $file | awk '{print $0+1}' }
+}
+
