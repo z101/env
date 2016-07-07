@@ -2,18 +2,136 @@
 
 root='https://www.drive2.ru'
 store=$home/d2/exp
-prev='https://www.drive2.ru/experience/nissan/g1516/?from=0'
-file='1'
+last=$"store'/last'
+map=$"store'/map'
+data=$"store'/data'
 
-while(! ~ $#prev 0){
-	p=$"store'/'$"file
-	l=$"file'; '$"prev
-	curl -Lo $p $prev >/dev/null >[2=1]
-	prev=()
-	prev=`{ sed -n -e '/class="c-pager__link.*редыд/ {
-		s|.*href="([^"]+)".*|'$root'\1|p
-		q
-	}' $p }
-	file=`{ echo $file | awk '{print $0+1}' }
+fn prepare {
+	rlines=3
+	cd $"store
+	if(test -e $map){
+		if(test `{ cat $map | wc -l } -le $rlines){
+			rm -f $map
+		}
+	}
+	if(test -e $map){
+		for(file in `{ cat $map | sort -n | tail -$rlines | sed -e 's/ .*//' -e 's/^/data_/' }){
+			if(test -e $file){
+				rm -f $file
+			}
+		}
+		cat $map | sort -n | head -n-$rlines >$map.o
+		mv $map.o $map; rm -f $map.o
+	}
+	if(test -e 'last'){
+		rm -f 'last'
+	}
+	if(test -e 'data_last'){
+		rm -f 'data_last'
+	}
+}
+	
+fn cache {
+	file='1'
+	prev=$root'/experience/nissan/g1516/?from=0'
+	if(test -e $map){
+		fp=`{ sed -n '$p' $map }
+		file=`{ echo $fp(1) | awk '{print $0+1}' }
+		prev=$fp(2)
+	}
+	
+	while(! ~ $#prev 0){
+		p=$"store'/'$"file
+		l=$"file' '$"prev
+		curl -Lo $p $prev >/dev/null >[2=1]
+		prev=()
+		prev=`{ sed -n -e '/class="c-pager__link.*редыд/ {
+			s|.*href="([^"]+)".*|'$root'\1|p
+			q
+		}' $p }
+		if(! ~ $#prev 0){
+			echo $l
+			echo $l >>$map
+		}
+		file=`{ echo $file | awk '{print $0+1}' }
+	}
+	if(! ~ $#p 0){
+		mv $p $last
+	}
 }
 
+fn processdatafile {
+	if(! test -e 'data_'$1){
+		cat $1 | awk '
+function norm(str) {
+	gsub(/\n/, " ", str)
+	gsub(/\r/, " ", str)
+	gsub(/^ +/, "", str)
+	gsub(/^	+/, "", str)
+	gsub(/ +$/, "", str)
+	gsub(/	$/, "", str)
+	gsub(/  +/, " ", str)
+	gsub(/&nbsp;/, " ", str)
+	gsub(/;/, ",", str)
+	return str
+}
+
+BEGIN {
+	FS=">"
+	RS="<"
+	centity = 0
+	titles[""] = 0
+	threfs[""] = 0
+	leads[""] = 0
+	mode = ""
+}
+/c-entity js-entity/ {
+	centity++
+}
+/c-post-preview__title/ {
+	mode="TITLE"
+}
+mode == "TITLE" && /^a / {
+	if (match($0, /href="[^"]+/)) {
+		thref = substr($0, RSTART, RLENGTH)
+		sub(/^href="/, "", thref)
+		threfs[centity] = norm(thref)
+	}
+	title = $0
+	gsub(/[^>]+>/, "", title)
+	titles[centity] = norm(title)
+	mode = ""
+}
+/c-post-preview__lead/ {
+	lead = $0
+	gsub(/[^>]+>/, "", lead)
+	leads[centity] = norm(lead)
+}
+END {
+	for (i = 1; i <= centity; i++) {
+		printf("%s;%s;%s\n", titles[i], threfs[i], leads[i])
+	}
+}' > 'data_'$1
+		echo 'file "'$1'" processed'
+	}
+}
+
+fn process {
+	cd $"store
+	for(file in `{ ls [0-9]* | sort -n }){
+		processdatafile $file
+	}
+	processdatafile 'last'
+	echo 'generating "data" file...'
+	if(test -e $data){
+		rm -f $data
+	}
+	for(file in `{ ls data_[0-9]* | sort -n }){
+		cat $file >> $data
+	}
+	cat 'data_last' >> $data
+}
+
+prepare
+cache
+process
