@@ -2,67 +2,9 @@
 
 root='https://www.drive2.ru'
 store=$home/d2/exp
-last=$"store'/last'
-map=$"store'/map'
-data=$"store'/data'
 
-fn prepare {
-	rlines=3
-	cd $"store
-	if(test -e $map){
-		if(test `{ cat $map | wc -l } -le $rlines){
-			rm -f $map
-		}
-	}
-	if(test -e $map){
-		for(file in `{ cat $map | sort -n | tail -$rlines | sed -e 's/ .*//' -e 's/^/data_/' }){
-			if(test -e $file){
-				rm -f $file
-			}
-		}
-		cat $map | sort -n | head -n-$rlines >$map.o
-		mv $map.o $map; rm -f $map.o
-	}
-	if(test -e 'last'){
-		rm -f 'last'
-	}
-	if(test -e 'data_last'){
-		rm -f 'data_last'
-	}
-}
-	
-fn cache {
-	file='1'
-	prev=$root'/experience/nissan/g1516/?from=0'
-	if(test -e $map){
-		fp=`{ sed -n '$p' $map }
-		file=`{ echo $fp(1) | awk '{print $0+1}' }
-		prev=$fp(2)
-	}
-	
-	while(! ~ $#prev 0){
-		p=$"store'/'$"file
-		l=$"file' '$"prev
-		curl -Lo $p $prev >/dev/null >[2=1]
-		prev=()
-		prev=`{ sed -n -e '/class="c-pager__link.*редыд/ {
-			s|.*href="([^"]+)".*|'$root'\1|p
-			q
-		}' $p }
-		if(! ~ $#prev 0){
-			echo $l
-			echo $l >>$map
-		}
-		file=`{ echo $file | awk '{print $0+1}' }
-	}
-	if(! ~ $#p 0){
-		mv $p $last
-	}
-}
-
-fn processdatafile {
-	if(! test -e 'data_'$1){
-		cat $1 | awk '
+fn process {
+	cat $1 | awk '
 function norm(str) {
 	gsub(/\n/, " ", str)
 	gsub(/\r/, " ", str)
@@ -83,6 +25,8 @@ BEGIN {
 	titles[""] = 0
 	threfs[""] = 0
 	leads[""] = 0
+	datetxts[""] = 0
+	datenums[""] = 0
 	mode = ""
 }
 /c-entity js-entity/ {
@@ -107,31 +51,80 @@ mode == "TITLE" && /^a / {
 	gsub(/[^>]+>/, "", lead)
 	leads[centity] = norm(lead)
 }
+/c-post-preview__date/ {
+    datetxt = $0
+    gsub(/^.*data-tt="/, "", datetxt)
+    gsub(/".*/, "", datetxt)
+    gsub(/&#160;/, " ", datetxt)
+    gsub(/\n/, "", datetxt)
+    year = datetxt
+    month = datetxt
+    day = datetxt
+    time = datetxt; gsub(/^[^ ]+ [^ ]+ [^ ]+ [^ ]+ /, "", time)
+    hour = time
+    minute = time
+    gsub(/^[^ ]+ [^ ]+ /, "", year); gsub(/ .*/, "", year)
+    gsub(/^[^ ]+ /, "", month); gsub(/ .*/, "", month)
+	gsub(/января/, "01", month)
+	gsub(/февраля/, "02", month)
+	gsub(/марта/, "03", month)
+	gsub(/апреля/, "04", month)
+	gsub(/мая/, "05", month)
+	gsub(/июня/, "06", month)
+	gsub(/июля/, "07", month)
+	gsub(/августа/, "08", month)
+	gsub(/сентября/, "09", month)
+	gsub(/октября/, "10", month)
+	gsub(/ноября/, "11", month)
+	gsub(/декабря/, "12", month)
+    gsub(/ .*/, "", day)
+	if (length(day) == 1) {
+		day = "0" day
+	}
+    gsub(/:[0-9]+/, "", hour)
+    gsub(/^[0-9]+:/, "", minute)
+	datenum = year month day hour minute
+	datetxts[centity] = datetxt
+	datenums[centity] = datenum
+}
 END {
 	for (i = 1; i <= centity; i++) {
-		printf("%s;%s;%s\n", titles[i], threfs[i], leads[i])
+		printf("%s;%s;%s;%s;%s\n", titles[i], threfs[i], datetxts[i], datenums[i], leads[i])
 	}
 }' > 'data_'$1
-		echo 'file "'$1'" processed'
-	}
+	echo 'file "'$1'" processed'
 }
 
-fn process {
+fn cache {
+	file='1'
+	prev=$root'/experience/nissan/g1516/?from=0'
 	cd $"store
-	for(file in `{ ls [0-9]* | sort -n }){
-		processdatafile $file
+	rm -f *
+	while(! ~ $#prev 0){
+		curl -Lo $file $prev >/dev/null >[2=1]
+		prev=()
+		prev=`{ sed -n -e '/class="c-pager__link.*редыд/ {
+			s|.*href="([^"]+)".*|'$root'\1|p
+			q
+		}' $file }
+prev=()
+		if(! ~ $#prev 0){
+			echo 'page "'$file'" cached'
+			file=`{ echo $file | awk '{print $0+1}' }
+		}
 	}
-	processdatafile 'last'
+	if(! ~ $#file 0){
+		mv $file last
+	}
+	for(file in `{ ls [0-9]* >[2]/dev/null | sort -n }){
+		process $file
+	}
+	process last
 	echo 'generating "data" file...'
-	if(test -e $data){
-		rm -f $data
+	for(file in `{ ls data_[0-9]* >[2]/dev/null | sort -n }){
+		cat $file >> data
 	}
-	for(file in `{ ls data_[0-9]* | sort -n }){
-		cat $file >> $data
-	}
-	cat 'data_last' >> $data
+	cat data_last >> data
 }
 
-prepare
 cache
-process
