@@ -2,8 +2,10 @@
 
 root='https://www.drive2.ru'
 store=$home/d2/exp
+site=$home/repos/swerc/sites/default
 
 fn process {
+	echo 'processing "'$1'" file...'
 	cat $1 | awk '
 function norm(str) {
 	gsub(/\n/, " ", str)
@@ -92,7 +94,6 @@ END {
 		printf("%s;%s;%s;%s;%s\n", titles[i], threfs[i], datetxts[i], datenums[i], leads[i])
 	}
 }' > 'data_'$1
-	echo 'file "'$1'" processed'
 }
 
 fn cache {
@@ -101,15 +102,15 @@ fn cache {
 	cd $"store
 	rm -f *
 	while(! ~ $#prev 0){
+		echo 'caching "'$file'" page...'
 		curl -Lo $file $prev >/dev/null >[2=1]
 		prev=()
 		prev=`{ sed -n -e '/class="c-pager__link.*редыд/ {
 			s|.*href="([^"]+)".*|'$root'\1|p
 			q
 		}' $file }
-prev=()
+#prev=()
 		if(! ~ $#prev 0){
-			echo 'page "'$file'" cached'
 			file=`{ echo $file | awk '{print $0+1}' }
 		}
 	}
@@ -127,4 +128,46 @@ prev=()
 	cat data_last >> data
 }
 
-cache
+fn exphtml {
+	cd $"store
+	echo 'generating html "'$2'"...'
+	cat data | sort -nr -t';' +3 | awk -F';' '
+BEGIN {
+	print "<!doctype html>"
+	print "<html>"
+	print "<head>"
+	print "<title>'$2'</title>"
+	print "<meta charset=\"UTF-8\">"
+	print "<style type=\"text/css\">"
+	print "body {"
+	print "  background-color: #202020;"
+	print "  color: #bbbbbb;"
+	print "  font-family: monospace;"
+	print "  font-size: 12pt;"
+	print "  padding: 0;"
+	print "  margin: 0;"
+	print "}"
+	print "a {"
+	print "  color: #eeeeec;"
+	print "  text-decoration: none;"
+	print "}"
+	print "a:hover {"
+	print "  text-decoration: underline;"
+	print "}"
+	print "</style>"
+	print "</head>"
+	print "<body>"
+}
+'$1' {
+	i++
+	printf("<a href=\"%s\">%s</a><br /><div style=\"color: #777777;\">%s</div><br />\r\n", "'$"root'" $2, i ". " $1 " [" $3 "]", $5)
+}
+END {
+	print "</body>"
+	print "</html>"
+}' > $"site'/'$2
+}
+
+#cache
+exphtml '' 'd2'
+exphtml '/(пружин)|(аморт)|(клирен)|(пыльник)|(отбойни)|(подвес)|(аммор)|(стойк)/' 'd2s'
