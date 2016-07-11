@@ -68,6 +68,7 @@ fn zp {
 if (test -f $home/lib/profile.local)
 	. $home/lib/profile.local
 
+stty iutf8
 tabs 4
 cd
 clear
