@@ -12,11 +12,11 @@ acind=''
 if (~ $acpib *Charging*)
 	acind=~
 if (test $bat -ge 10 -o -n $acind) {
-	batc='\c1'^$"acind^' '^$"bat^'%\c0 '^$"batrem
+	batc=$"acind^' '^$"bat^'% '^$"batrem
 }
 if not {
-	batc='\c3'^$"bat^'% '^$"batrem^'\c0'
+	batc=$"bat^'% '^$"batrem
 }
 dt=`{ date | sed 's/^.* ([0-9][0-9]:[0-9][0-9]).*$/\1/' }
-dtc='\c1'^$"dt
+dtc=$"dt
 xsetroot -name ' '^$"batc^' | '^$"dtc
