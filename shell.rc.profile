@@ -69,6 +69,7 @@ if (test -f $home/lib/profile.local)
 	. $home/lib/profile.local
 
 stty iutf8
-tabs 4
-cd
-clear
+tabs 4 >/dev/null >[2=1]
+cd `{ pwd }
+#cd
+#clear

@@ -3,6 +3,8 @@
 # dwm status
 # $home/.dwms
 
+PATH=/usr/local/plan9/bin:$PATH
+
 acpib=`{ acpi -b }
 bat=`{ echo $acpib | sed 's/^.*(([0-9])|([0-9][0-9])|([0-9][0-9][0-9]))%.*$/\1/' }
 batrem='--:--'
