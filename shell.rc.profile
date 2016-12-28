@@ -5,15 +5,16 @@ PATH=$PLAN9/bin:$PATH
 MANPATH=$PLAN9/share/man:/usr/share/man
 
 ps1='; '
+usr=`{whoami}
 hname=`{hostname}
 tab='	'
 
 fn setprompt {
 	if(~ `{pwd} '/')
-		prompt=($hname^' /'^$ps1 $tab)
+		prompt=($usr^' '^$hname^' /'^$ps1 $tab)
 	if not {
 		ifs='
-' { ppt=$hname^' '^`{basename `{pwd}}^$ps1 }
+' { ppt=$usr^' '^$hname^' '^`{basename `{pwd}}^$ps1 }
 		prompt=($ppt $tab)
 	}
 }
@@ -23,7 +24,7 @@ fn cd {
 	switch($#*){
 	case 0
 		dir=$home
-		prompt=($hname^$ps1 $tab)
+		prompt=($usr^' '^$hname^$ps1 $tab)
 	case *
 		switch($1){
 		case /*
