@@ -114,7 +114,12 @@ fi
 
 # CUSTOM
 
-PS1='${debian_chroot:+($debian_chroot)}\u \h \w$ '
+function settitle() {
+	export PS1='${debian_chroot:+($debian_chroot)}\u \h \w$ '
+	echo -ne "\e]0;$1\a"
+}
+
+settitle
 
 alias rc='/usr/local/plan9/bin/rc -l'
 alias ed='/usr/local/plan9/bin/ed'
@@ -124,3 +129,4 @@ if [ -f ~/.bashrc.local ]; then
 fi
 
 tabs 4 >/dev/null 2>&1
+clear
