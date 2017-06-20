@@ -1,16 +1,59 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import urllib, urllib2
+import urllib
+import urllib2
+import cookielib
+import json
 import re
 import os
 from HTMLParser import HTMLParser
 
-def uhtml(html):
-    u = {}
-    for m in re.finditer("/users/(?P<usr>[^/\?\"\'\<]+)", html, flags = re.IGNORECASE):
-        u[m.group("usr")] = "https://www.drive2.ru/users/" + m.group("usr")
-    return u
+opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookielib.CookieJar()), urllib2.HTTPHandler())
+
+def d2re(rx, html):
+    l = []
+    for m in re.finditer(rx, html, flags = re.IGNORECASE):
+        if len(m.groups()) > 0: l.append(m.groupdict())
+        else: l.append(m.group(0))    
+    return l
+
+def d2html(url):
+    hdrs= {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
+        "Accept": "*/*",
+    }
+    try: conn = opener.open(urllib2.Request(url, headers=hdrs))
+    except urllib2.HTTPError, e: conn = e
+    if conn.code == 200: return conn.read()
+    else: raise Exception(conn)
+
+def d2cars():
+    print " - getting car list"
+    jcars = d2re("\<a[^\>]+href=\"/r/(?P<car>[^\"/]+)/?\"[^\>]*>(?P<name>[^\<]+)", d2html("https://www.drive2.ru/cars"))
+    for crow in jcars:
+        print ' - getting model list: "{}"'.format(crow["car"])
+        jmodels = d2re("\<a[^\>]+class=\"c-link\"[^\>]+href=\"/r/{}/(?P<model>[^\"/]+)/?\"[^\>]*>(?P<name>[^\<]+)".format(crow["car"]), d2html("https://www.drive2.ru/r/{}".format(crow["car"])))
+        if len(jmodels) > 0:
+            print '    * models count: {}'.format(len(jmodels))
+            crow["models"] = jmodels
+    print "writing cars file"
+    with open(os.path.join(os.path.expanduser("~"), ".d2u/cars"), "w+") as f:
+        f.write(json.dumps(jcars, ensure_ascii = False))
+
+d2cars()
+
+#def uhtml(html):
+#    u = {}
+#    for m in re.finditer("/users/(?P<usr>[^/\?\"\'\<]+)", html, flags = re.IGNORECASE):
+#        u[m.group("usr")] = "https://www.drive2.ru/users/" + m.group("usr")
+#    return u
+#
+#def chtml(html):
+#    u = {}
+#    for m in re.finditer("/r/(?P<car>[^/\?\"\'\<]+)", html, flags = re.IGNORECASE):
+#        u[m.group("usr")] = "https://www.drive2.ru/r/" + m.group("usr")
+#    return u
 
 def uread():
     u = {}
@@ -19,63 +62,63 @@ def uread():
             u.update(uhtml(fh.read()))
     return u
 
-def d2ajax():
-#    <button class="c-button" data-action="subscription.more" data-type="userfollowers" data-id="288230376151730376" data-key="3BkmSy9c7E00Z_o7-qMFm6n44TFd5P06U8CHAw906qKX1xUwViFDaEvF47WgQM1ez8adiGyzw081WA5u2pr-5SiL-JwpOFCXUky9K5IH5F81qNKVrNA-p0vcSZAZFIROWgvGOB6I5mW0r4HSmNVyDVDpLYe8hblI7_0_abJLM2w8178yNt9vvW0-S6XVIiEs">Показать ещё</button>
-    url = "https://www.drive2.ru/ajax/subscription"
+
+
+
+
+
+
+
+def ufhtml(url):
+    def gethtml(request):
+        try:
+            conn = opener.open(request)
+        except urllib2.HTTPError, e:
+            conn = e
+        if conn.code == 200:
+            return conn.read()
+        else:
+            raise Exception(conn)
+    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookielib.CookieJar()), urllib2.HTTPHandler())
     hdrs= {
-        "Host": "www.drive2.ru",
-        "Connection": "keep-alive",
-#        "Content-Length": "316",
-        "Origin": "https://www.drive2.ru",
-        "X-Requested-With": "XMLHttpRequest",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
         "Accept": "*/*",
-        "Referer": "https://www.drive2.ru/",
-#        "Accept-Encoding": "gzip, deflate, br",
-        "Accept-Language": "en-US,en;q=0.8,ru;q=0.6",
-#        "Cookie": ".AUI=_wfqzlwoyisJAAHmZh0lBQsDQL5BwPyR8j4kFs38ynBL1jmjlcOi; _AFF=2; _ym_uid=1493899634911634154; .CSY=1; .DVMI=Bo5cgEAAAAg; .PBIK=AgAAAAAAHCAmAQAAAAAGlfCAQAAFIAaXTYBAAAHuAAAAAAGQiio4jo5YZwclJ9BOd3ymUw-ftQ; .AMET=Cw6oiOGBrPeLbSs1BbdcWG3ZMGho0jCCl6XcTHwlMIz9wlp1pvALuxZE3FECWty-PcdAMX2EfnZcQu3Bjl41b3AFtLjWG9Ir7ltjGpX7r3I8bLc07Mzv1I4YsU91lPwi; .UTZ=1497624642 -180; _ym_isad=1; _ym_visorc_33911514=b; .DVAB=1; _ga=GA1.2.703470482.1493899633; _gid=GA1.2.189806629.1497624642",
     }
-    aparams = {
-        # const?
-        ".FCTX": "_wfqzlwoyisTAAQRQnJ1LldlYi4xOjE4NDMyMzirMhF-koCMOQMffEwF2K9kvUchDA",
-        # dummy?
-        "_": "get",
-        # data-type
-        "type": "userfollowers",
-        # data-key
-        "key": "3BkmSy9c7E00Z_o7-qMFm6n44TFd5P06U8CHAw906qKX1xUwViFDaEvF47WgQM1ez8adiGyzw081WA5u2pr-5SiL-JwpOFCXUky9K5IH5F81qNKVrNA-p0vcSZAZFIROWgvGOB6I5mW0r4HSmNVyDVDpLYe8hblI7_0_abJLM2w8178yNt9vvW0-S6XVIiEs",
-        # data-id
-        "id": "288230376151730376"
-    }
-    method = "POST"
-    handler = urllib2.HTTPHandler()
-    opener = urllib2.build_opener(handler)
-    data = urllib.urlencode(aparams)
-    request = urllib2.Request(url, headers=hdrs, data=data)
-    request.get_method = lambda: method
-    try:
-        connection = opener.open(request)
-    except urllib2.HTTPError, e:
-        connection = e
-    if connection.code == 200:
-        html = connection.read()
+    html = gethtml(urllib2.Request(url, headers=hdrs))
+    m = re.search('".FCTX",\s*"(?P<fctx>[^"]+)', html, flags = re.IGNORECASE)
+    if not m:
+        raise Exception("no .FCTX")
+    fctx = m.group("fctx")
+    m = re.search('\<button(?P<params>[^\>]+)\>Показать ещё', html, flags = re.IGNORECASE)
+    if m:
+        aparams = {
+            ".FCTX": fctx,
+            "_": "get",
+        }
+        for m in re.finditer("(?P<name>[^=]+)\s*=\s*(\"|')(?P<value>[^\"']+)", html, flags = re.IGNORECASE):
+            if "data-type" in m.group("name"):
+                aparams["type"] = m.group("value")
+            if "data-key" in m.group("name"):
+                aparams["key"] = m.group("value")
+            if "data-id" in m.group("name"):
+                aparams["id"] = m.group("value")
+
+        url = "https://www.drive2.ru/ajax/subscription"
+        hdrs= {
+            "Connection": "keep-alive",
+            "X-Requested-With": "XMLHttpRequest",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
+            "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+            "Accept": "*/*",
+        }
+        request = urllib2.Request(url, headers=hdrs, data=urllib.urlencode(aparams))
+        request.get_method = lambda: "POST"
+        html = json.loads(gethtml(request))["html"]
         print html
-    else:
-        raise Exception(connection)
 
-d2ajax()
-#
-#Data
-#
-#.FCTX=_wfqzlwoyisTAAQRQnJ1LldlYi4xOjE4NDMyMzirMhF-koCMOQMffEwF2K9kvUchDA&_=get&type=userfollowers&key=3BkmSy9c7E00Z_o7-qMFm6n44TFd5P06U8CHAw906qKX1xUwViFDaEvF47WgQM1ez8adiGyzw081WA5u2pr-5SiL-JwpOFCXUky9K5IH5F81qNKVrNA-p0vcSZAZFIROWgvGOB6I5mW0r4HSmNVyDVDpLYe8hblI7_0_abJLM2w8178yNt9vvW0-S6XVIiEs&id=288230376151730376
-#    pass
 
-#u = uread()
-#for usr, url in u.iteritems():
-#    print "{:<20} {}".format(usr, url)
-#print
-#print "count", len(u)
+
+#ufhtml("https://www.drive2.ru/users/rvalbi4/followers")
 
 # ARCHIVE
 
