@@ -23,9 +23,27 @@ def d2html(url):
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
         "Accept": "*/*",
     }
-    try: conn = opener.open(urllib2.Request(url, headers=hdrs))
+    try: conn = opener.open(urllib2.Request(url, headers = hdrs))
     except urllib2.HTTPError, e: conn = e
     if conn.code == 200: return conn.read()
+    else: raise Exception(conn)
+
+def d2ajax(url, data, urldata = 0, method = "POST"):
+    hdrs= {
+        "Connection": "keep-alive",
+        "X-Requested-With": "XMLHttpRequest",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+        "Accept": "*/*",
+    }
+    if urldata:
+        request = urllib2.Request("{}?{}".format(url, urllib.urlencode(data)), headers = hdrs)
+    else:
+        request = urllib2.Request(url, headers = hdrs, data = urllib.urlencode(data))
+    request.get_method = lambda: method
+    try: conn = opener.open(request)
+    except urllib2.HTTPError, e: conn = e
+    if conn.code == 200: return json.loads(conn.read())
     else: raise Exception(conn)
 
 def d2cars():
@@ -41,7 +59,83 @@ def d2cars():
     with open(os.path.join(os.path.expanduser("~"), ".d2u/cars"), "w+") as f:
         f.write(json.dumps(jcars, ensure_ascii = False))
 
-d2cars()
+def d2carhtml(url, cityid):
+    def getpage(attrs, start, idx, cityid):
+        return d2ajax("https://www.drive2.ru/ajax/carsearch.cshtml", {
+            "context": attrs["data-context"],
+            "start": start,
+            "sort": attrs["data-sort"],
+            "index": idx,
+            "city": cityid,
+            "country": attrs["data-country"],
+        }, method = "GET", urldata = 1)
+    html = d2html(url)
+    battrs = d2re("\<button(?P<attrs>[^\>]+)\>\s*Показать\s+ещ", html)
+    idx = 0
+    ahtmls = []
+    if len(battrs) > 0:
+        attrs = dict((row["name"].lower(), row["value"]) for row in d2re("\s+(?P<name>[^\=]+)\s*\=\s*(\"|')(?P<value>[^\"']+)", battrs[0]["attrs"]))
+        start = attrs["data-start"]
+        jpage = getpage(attrs, start, idx, cityid)
+        ahtmls.append(jpage["html"])
+        idx += 1
+        while "start" in jpage:
+            jpage = getpage(attrs, jpage["start"], idx, cityid)
+            ahtmls.append(jpage["html"])
+            idx += 1
+    html = unicode(html, "utf-8")
+    return u"{}\n{}".format(html, u"\n".join(ahtmls))
+    
+def d2carusrsrzn():
+    print " - getting rzn id"
+    jcities = d2ajax("https://www.drive2.ru/ajax/geo.cshtml", {
+        "_": "r",
+        "token": "рязань",
+    }, method = "GET", urldata = 1)
+    rznid = ""
+    for r in jcities[0]:
+        if type(r) is dict:
+            if (r["caption"].lower() == u'рязань'
+                and r["country"].lower() == u'россия'
+                and r["extra"].lower() == u'россия'):
+                rznid = r["id"]
+                break
+    if not rznid: raise Exception("rzn id not found")
+    print "    * rzn id: {}".format(rznid)
+    print " - reading cars db"
+    with open(os.path.join(os.path.expanduser("~"), ".d2u/cars"), "r") as f:
+        jcars = json.loads(f.read())
+    print " - getting rzn car users"
+    # debug
+    #jcars = [{"car":"lada","name":u"Лада","models":[{"model":"m1506","name":"4x4 3D"}]}]
+    # debug
+    usrs = []
+    for car in jcars:
+        if "models" in car:
+            for model in car["models"]:
+                print u'    * reading model html: [{}] {}'.format(car["name"], model["name"])
+                html = d2carhtml("https://www.drive2.ru/r/{}/{}/?city={}".format(car["car"], model["model"], rznid), rznid)
+                for u in d2re("/users/(?P<usr>[^/\?\"\'\<]+)", html):
+                    if u["usr"] not in usrs:
+                        usrs.append(u["usr"])
+        else:
+            print u'    * reading car html: [{}]'.format(car["name"])
+            html = d2carhtml("https://www.drive2.ru/r/{}/?city={}".format(car["car"], rznid), rznid)
+            for u in d2re("/users/(?P<usr>[^/\?\"\'\<]+)", html):
+                if u["usr"] not in usrs:
+                    usrs.append(u["usr"])
+    print 
+    print "count: {}".format(len(usrs))
+    print "writing rzn users file"
+    with open(os.path.join(os.path.expanduser("~"), ".d2u/rzn.users"), "w+") as f:
+        f.write("\n".join(usrs))
+    
+#d2cars()
+d2carusrsrzn()
+
+
+
+
 
 #def uhtml(html):
 #    u = {}
