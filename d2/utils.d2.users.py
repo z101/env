@@ -13,7 +13,7 @@ opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookielib.CookieJar())
 
 def d2re(rx, html):
     l = []
-    for m in re.finditer(rx, html, flags = re.IGNORECASE):
+    for m in re.compile(rx, flags = re.U | re.I | re.S | re.M).finditer(html):
         if len(m.groups()) > 0: l.append(m.groupdict())
         else: l.append(m.group(0))    
     return l
@@ -130,8 +130,60 @@ def d2carusrsrzn():
     with open(os.path.join(os.path.expanduser("~"), ".d2u/rzn.users"), "w+") as f:
         f.write("\n".join(usrs))
     
+def d2rznusrdetails():
+    usr = "pafs-777"
+    udt = []
+    html = d2html("https://www.drive2.ru/users/{}".format(usr))
+    up = d2re((
+        # user card
+        u'\<div[^\>]+( |")c-user-card( |")[^\>]+\>(?P<ucard>.+?)'
+        # counters
+        u'\<div[^\>]+( |")c-user-info__nums[^\>]+\>(?P<counters>.+?)'
+        # buttons
+        u'\<div[^\>]+( |")c-user-info__buttons[^\>]+\>'
+    ), html)[0]
+    ui = d2re((
+        # user pic
+        u'\<div.*?c-user-card__pic-container.*?<img.*?src="(?P<img>[^"]+)'
+        # description
+        u'.*?\<div.*?c-user-card__info[^\>]+\>(?P<rawdescr>.*?)\<\/div\>'
+    ), up["ucard"])[0]
+    uc = d2re((
+        # counter followers
+        u'\<a[^\>]+\>[^\<]*\<strong[^\>]*\>(?P<cfollowers>\d+)'
+        # counter following
+        u'.*?\<a[^\>]+\>[^\<]*\<strong[^\>]*\>(?P<cfollowing>\d+)'
+        # counter following
+        u'.*?\<a[^\>]+\>[^\<]*\<strong[^\>]*\>(?P<ccarfollowing>\d+)'
+    ), up["counters"])[0]
+    ret = re.compile(u'<.*?>')
+    res = re.compile(u'\s\s+')
+    ft = lambda html : res.sub(' ', ret.sub('', html.replace("<br/>", "; ").replace("<br />", "; ").replace("\r", "").replace("\n", ""))).replace(" ;", ";").strip()
+    udt += {
+        "img": ui["img"].replace("-200", "-100"),
+        "usr": usr,
+        "descr": ft(ui["rawdescr"]),
+        "counters": {
+            "followers": uc["cfollowers"],
+            "following": uc["cfollowing"],
+            "carfollowing": uc["ccarfollowing"],
+        }
+    },
+    print json.dumps(udt, indent = 2, ensure_ascii = False)
+
+#    print '-----'
+#    print up[0]["counters"]
+    
+#    r = u'\<div class\=\"c-user-card__pic-container\"\>.*?\<div class\=\"c-user-card__body\"\>'
+##    r = u'\<div class\=\"c-user-card__pic-container\"\>'
+#    for m in d2re(r, html):
+#        print '------------------------------'
+#        print m 
+#        print '------------------------------'
+
 #d2cars()
-d2carusrsrzn()
+#d2carusrsrzn()
+d2rznusrdetails()
 
 
 
