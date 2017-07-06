@@ -25,24 +25,24 @@ def d2re(rx, html, itr = True):
 
 def d2html(url):
     hdrs= {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
-        "Accept": "*/*",
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36',
+        'Accept': '*/*',
     }
     try: conn = opener.open(urllib2.Request(url, headers = hdrs))
     except urllib2.HTTPError, e: conn = e
     if conn.code == 200: return conn.read()
     else: raise Exception(conn)
 
-def d2ajax(url, data, urldata = 0, method = "POST"):
+def d2ajax(url, data, urldata = 0, method = 'POST'):
     hdrs= {
-        "Connection": "keep-alive",
-        "X-Requested-With": "XMLHttpRequest",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-        "Accept": "*/*",
+        'Connection': 'keep-alive',
+        'X-Requested-With': 'XMLHttpRequest',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36',
+        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        'Accept': '*/*',
     }
     if urldata:
-        request = urllib2.Request("{}?{}".format(url, urllib.urlencode(data)), headers = hdrs)
+        request = urllib2.Request('{}?{}'.format(url, urllib.urlencode(data)), headers = hdrs)
     else:
         request = urllib2.Request(url, headers = hdrs, data = urllib.urlencode(data))
     request.get_method = lambda: method
@@ -52,20 +52,23 @@ def d2ajax(url, data, urldata = 0, method = "POST"):
     else: raise Exception(conn)
 
 def d2dbpath(fn):
-    return os.path.join(os.path.expanduser("~"), ".d2db", fn)
+    return os.path.join(os.path.expanduser('~'), '.d2db', fn)
 
 def d2dbr(fn):
-    fn = os.path.join(os.path.expanduser("~"), ".d2db", fn)
-    with open(fn, "r") as f:
+    fn = os.path.join(os.path.expanduser('~'), '.d2db', fn)
+    with open(fn, 'r') as f:
         return unicode(f.read(), 'utf-8')
+
+def d2jdumpu(j):
+    return unicode(json.dumps(j, indent = 2, ensure_ascii = False), 'utf-8')
 
 def d2jdump(j):
     return json.dumps(j, indent = 2, ensure_ascii = False)
     
 def d2dbw(fn, data):
-    fn = os.path.join(os.path.expanduser("~"), ".d2db", fn)
+    fn = os.path.join(os.path.expanduser('~'), '.d2db', fn)
     fdir = os.path.dirname(os.path.abspath(fn))
     if not os.path.exists(fdir):
         os.makedirs(fdir)
-    with codecs.open(fn, "w+", "utf-8") as f:
+    with codecs.open(fn, 'w+', 'utf-8') as f:
         f.write(data)

@@ -4,6 +4,7 @@
 import os, re, json, operator, datetime, shutil
 from d2lib import d2re
 from d2lib import d2jdump
+from d2lib import d2jdumpu
 from d2lib import d2html
 from d2lib import d2ajax
 from d2lib import d2dbr
@@ -11,22 +12,25 @@ from d2lib import d2dbw
 from d2lib import d2dbpath
 
 def d2cars():
-    print "getting car list"
-    jcars = d2re("\<a[^\>]+href=\"/r/(?P<car>[^\"/]+)/?\"[^\>]*>(?P<name>[^\<]+)", d2html("https://www.drive2.ru/cars"))
+    print 'getting car list'
+    jcars = d2re('<a[^>]+href="/r/(?P<car>[^"/]+)/?"[^>]*>(?P<name>[^<]+)', d2html('https://www.drive2.ru/cars'))
+    # debug
+    #jcars = [{'car':'moskvich','name':'Москвич'}]
+    # debug
     for crow in jcars:
-        print 'getting model list: "{}"'.format(crow["car"])
-        jmodels = d2re("\<a[^\>]+class=\"c-link\"[^\>]+href=\"/r/{}/(?P<model>[^\"/]+)/?\"[^\>]*>(?P<name>[^\<]+)".format(crow["car"]), d2html("https://www.drive2.ru/r/{}".format(crow["car"])))
+        print 'getting model list: "{}"'.format(crow['name'])
+        jmodels = d2re('<a[^>]+class="c-link"[^>]+href="/r/{}/(?P<model>[^"/]+)/?"[^>]*>(?P<name>[^<]+)'.format(crow['car']), d2html('https://www.drive2.ru/r/{}'.format(crow["car"])))
         if len(jmodels) > 0:
             print ' - models count: {}'.format(len(jmodels))
-            crow["models"] = jmodels
+            crow['models'] = jmodels
             for mrow in jmodels:
-                print 'getting generation list: "{}"'.format(mrow["name"])
-                jgens = d2re("\<a[^\>]+class=\"c-link\"[^\>]+href=\"/r/{}/(?P<generation>g[^\"/]+)/?\"[^\>]*>(?P<name>[^\<]+)".format(crow["car"]), d2html("https://www.drive2.ru/r/{}/{}".format(crow["car"], mrow["model"])))
+                print 'getting generation list: [{}] "{}"'.format(crow['name'], mrow['name'])
+                jgens = d2re('<a[^>]+class="c-link"[^>]+href="/r/{}/(?P<generation>g[^"/]+)/?"[^>]*>(?P<name>[^<]+)'.format(crow["car"]), d2html('https://www.drive2.ru/r/{}/{}'.format(crow['car'], mrow['model'])))
                 if len(jgens) > 0:
                     print ' - generations count: {}'.format(len(jgens))
-                    mrow["generations"] = jgens
-    print "writing cars file"
-    d2dbw('cars', d2jdump(jcars))
+                    mrow['generations'] = jgens
+    print 'writing cars file'
+    d2dbw('cars', d2jdumpu(jcars))
 
 def d2carhtml(url, cityid):
     def getpage(attrs, start, idx, cityid):
@@ -83,13 +87,13 @@ def d2usrsrzn():
             for model in car["models"]:
                 if "generations" in model:
                     for generation in model["generations"]:
-                        print u' - reading generation html: [{}] {} - {}'.format(car["name"], model["name"], generation["name"])
+                        print u' - reading generation html: [{}] "{}" - {}'.format(car["name"], model["name"], generation["name"])
                         html = d2carhtml("https://www.drive2.ru/r/{}/{}/?city={}".format(car["car"], generation["generation"], rznid), rznid)
                         for u in d2re("/users/(?P<usr>[^/\?\"\'\<]+)", html):
                             if u["usr"] not in usrs:
                                 usrs.append(u["usr"])
                 else:
-                    print u' - reading model html: [{}] {}'.format(car["name"], model["name"])
+                    print u' - reading model html: [{}] "{}"'.format(car["name"], model["name"])
                     html = d2carhtml("https://www.drive2.ru/r/{}/{}/?city={}".format(car["car"], model["model"], rznid), rznid)
                     for u in d2re("/users/(?P<usr>[^/\?\"\'\<]+)", html):
                         if u["usr"] not in usrs:
@@ -100,7 +104,6 @@ def d2usrsrzn():
             for u in d2re("/users/(?P<usr>[^/\?\"\'\<]+)", html):
                 if u["usr"] not in usrs:
                     usrs.append(u["usr"])
-    print 
     print "count: {}".format(len(usrs))
     print "writing rzn users file"
     d2dbw('usrs.rzn', "\n".join(usrs))
@@ -115,7 +118,7 @@ def d2usrsrznhtml():
     uc = len(usrs)
     for i, usr in enumerate(usrs):
         print 'downloading html {} from {}: {}'.format(i + 1, uc, usr)
-        d2dbw(u'/{}'.format(usr), unicode(d2html(u'https://www.drive2.ru/users/{}'.format(usr)), 'utf-8'))
+        d2dbw(u'{}/{}'.format(htmlpath, usr), unicode(d2html(u'https://www.drive2.ru/users/{}'.format(usr)), 'utf-8'))
     
 def d2usrsrzndetails():
     def clean(text):
@@ -434,7 +437,7 @@ def d2usrsrzndetails():
         u['communities'].extend(ucmuadm(html))
         u.update({'ads': []})
         u['ads'].extend(uads(html))
-        d2dbw(u'{}/{}'.format(jsonpath, usr), json.dumps(u, indent = 2, ensure_ascii = False))
+        d2dbw(u'{}/{}'.format(jsonpath, usr), d2jdump(u))
 
 # 1. getting cars list
 d2cars()
