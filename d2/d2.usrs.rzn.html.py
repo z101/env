@@ -10,7 +10,7 @@ def d2usrsrznhtml():
     uc = len(usrs)
     for i, usr in enumerate(usrs):
         print 'processing {} from {}: {}'.format(repr(i + 1), repr(uc), usr)
-        d2dbw('usrs.rzn.html/{}'.format(usr), d2html('https://www.drive2.ru/users/{}'.format(usr)))
+        d2dbw(u'usrs.rzn.html/{}'.format(usr), unicode(d2html(u'https://www.drive2.ru/users/{}'.format(usr)), 'utf-8'))
     print 'done.'
     
 d2usrsrznhtml()

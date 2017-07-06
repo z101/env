@@ -11,11 +11,16 @@ import codecs
 
 opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookielib.CookieJar()), urllib2.HTTPHandler())
 
-def d2re(rx, html):
+def d2re(rx, html, itr = True):
     l = []
-    for m in re.compile(rx, flags = re.U | re.I | re.S | re.M).finditer(html):
-        if len(m.groups()) > 0: l.append(m.groupdict())
-        else: l.append(m.group(0))    
+    r = re.compile(rx, flags = re.U | re.I | re.S | re.M)
+    if itr:
+        for m in r.finditer(html):
+            if len(m.groups()) > 0: l.append(m.groupdict())
+            else: l.append(m.group(0))    
+    else:
+        for m in r.findall(html):
+            l.append(m)    
     return l
 
 def d2html(url):
@@ -52,7 +57,7 @@ def d2dbpath(fn):
 def d2dbr(fn):
     fn = os.path.join(os.path.expanduser("~"), ".d2db", fn)
     with open(fn, "r") as f:
-        return f.read()
+        return unicode(f.read(), 'utf-8')
 
 def d2jdump(j):
     return json.dumps(j, indent = 2, ensure_ascii = False)
