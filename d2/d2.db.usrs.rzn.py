@@ -229,10 +229,42 @@ def d2usrsrzndetails():
             }
         })
         return u
-    recar = u'\<div class="o-grid__item".+?\<div.+?\<div.+?\<\/div\>.+?\<div.+?\<div.+?\<\/div\>.+?\<div.+?\<\/div\>.+?\<div.+?\<\/div\>.+?\<div.+?\<\/div\>.+?\<\/div\>.+?\<\/div\>.+?\<\/div\>'
+    recarx = u'\<div class="o-grid__item".+?\<div.+?\<div.+?\<\/div\>.+?\<div.+?\<div.+?\<\/div\>.+?\<div.+?\<\/div\>.+?\<div.+?\<\/div\>.+?\<div.+?\<\/div\>.+?\<\/div\>.+?\<\/div\>.+?\<\/div\>'
+    recarb = u"""<div class="o-grid__item">
+\s+<div class="c-car-card[^>]+>
+\s+<div class="c-car-card__pic[^>]+>
+\s+<a[^>]+><img[^>]+></a>
+\s+<span class="c-drive[^>]+>[^<]+</span>
+\s+</div>
+\s+<div class="c-car-card__body">
+\s+<div class="c-car-card__subscribe">
+\s+<button[^>]+>
+\s+<svg class="c-button__icon"><use[^>]+></use></svg>
+</button>
+\s+</div>
+\s+<div class="c-car-card__caption"><a[^>]+>[^<]+</a> <span class="counter[^>]+>[^<]+</span></div>
+\s+</div>
+\s+</div>
+\s+</div>""".replace('\n', '\\r\\n')
+    recar = u"""<div class="o-grid__item">
+\s+<div class="c-car-card[^>]+>
+\s+<div class="c-car-card__pic[^>]+>
+\s+<a[^>]+><img[^>]+></a>
+\s+<span class="c-drive[^>]+>[^<]+</span>
+\s+</div>
+\s+<div class="c-car-card__body">
+\s+<div class="c-car-card__subscribe">
+\s+<button[^>]+>
+\s+<svg class="c-button__icon"><use[^>]+></use></svg>
+</button>
+\s+</div>
+\s+<div class="c-car-card__caption"><a[^>]+>[^<]+</a> <span class="counter[^>]+>[^<]+</span></div>(?:\s+<div[^>]+>.+?</div>\s+<div[^>]+>.+?</div>)?
+\s+</div>
+\s+</div>
+\s+</div>""".replace('\n', '\\r\\n')
     def ucars(html):
         cars = []
-        if hasheader(u'Мои машины', html):
+        if hasheader(u'Мои машины', html):  
             ucars = d2re((
                 # cars
                 u'\<h\d[^\>]+\>.+?Мои машины.+?<div class="o-grid".+?(?P<cars>(\s+{cars})+)'
@@ -240,11 +272,14 @@ def d2usrsrzndetails():
                 .format(cars = recar)
             ), html)
             if (len(ucars)) == 0: raise Exception('ucars are not found')
-            ucars = ucars[0]
-            for m in d2re(recar, ucars['cars'], False):
+            ucars = d2re(recar, ucars[0]['cars'], False)
+            if (len(ucars)) == 1: raise Exception('ucars only one found')
+            for m in ucars:
                 ucar = d2re((
                     # img 
                     u'\<img src="(?P<img>[^"]+)'
+                    # drive
+                    u'.+?<span class="c-drive[^>]+>(?P<drive>\d+)'
                     # url & name
                     u'.+?\<a class="c-car-title[^\>]+href="(?P<url>[^"]+)"[^\>]*\>(?P<name>[^\<]+)'
                     # blog count
@@ -256,6 +291,7 @@ def d2usrsrzndetails():
                     'name': ucar['name'],
                     'img': ucar['img'].replace("-480", "-80"),
                     'url': ucar['url'],
+                    'drive': ucar['drive'],
                     'cblog': ucar['cblog'],
                     'former': '0',
                 })
@@ -275,6 +311,8 @@ def d2usrsrzndetails():
                 ucar = d2re((
                     # img 
                     u'\<img src="(?P<img>[^"]+)'
+                    # drive
+                    u'.+?<span class="c-drive[^>]+>(?P<drive>\d+)'
                     # url & name
                     u'.+?\<a class="c-car-title[^\>]+href="(?P<url>[^"]+)"[^\>]*\>(?P<name>[^\<]+)'
                     # blog count
@@ -286,6 +324,7 @@ def d2usrsrzndetails():
                     'name': ucar['name'],
                     'img': ucar['img'].replace("-480", "-80"),
                     'url': ucar['url'],
+                    'drive': ucar['drive'],
                     'cblog': ucar['cblog'],
                     'former': '0',
                 })
@@ -300,11 +339,14 @@ def d2usrsrzndetails():
                 .format(cars = recar)
             ), html)
             if (len(ucars)) == 0: raise Exception('ucars former are not found')
-            ucars = ucars[0]
-            for m in d2re(recar, ucars['cars'], False):
+            ucars = d2re(recar, ucars[0]['cars'], False)
+            if (len(ucars)) == 1: raise Exception('ucars only one found')
+            for m in ucars:
                 ucar = d2re((
                     # img 
                     u'\<img src="(?P<img>[^"]+)'
+                    # drive
+                    u'.+?<span class="c-drive[^>]+>(?P<drive>\d+)'
                     # url & name
                     u'.+?\<a class="c-car-title[^\>]+href="(?P<url>[^"]+)"[^\>]*\>(?P<name>[^\<]+)'
                     # blog count
@@ -316,6 +358,7 @@ def d2usrsrzndetails():
                     'name': ucar['name'],
                     'img': ucar['img'].replace("-480", "-80"),
                     'url': ucar['url'],
+                    'drive': ucar['drive'],
                     'cblog': ucar['cblog'],
                     'former': '1',
                 })
@@ -335,6 +378,8 @@ def d2usrsrzndetails():
                 ucar = d2re((
                     # img 
                     u'\<img src="(?P<img>[^"]+)'
+                    # drive
+                    u'.+?<span class="c-drive[^>]+>(?P<drive>\d+)'
                     # url & name
                     u'.+?\<a class="c-car-title[^\>]+href="(?P<url>[^"]+)"[^\>]*\>(?P<name>[^\<]+)'
                     # blog count
@@ -346,6 +391,7 @@ def d2usrsrzndetails():
                     'name': ucar['name'],
                     'img': ucar['img'].replace("-480", "-80"),
                     'url': ucar['url'],
+                    'drive': ucar['drive'],
                     'cblog': ucar['cblog'],
                     'former': '1',
                 })
@@ -415,6 +461,15 @@ def d2usrsrzndetails():
                     'name': uad['name'],
                 })
         return ads
+    def uheaders(html):
+        headers = []
+        for m in d2re(u'<h\d+[^>]*>(?P<hheader>.+?)</h\d+>', html):
+            hdr = clean(m['hheader'])
+            if (hdr.lower() != u'представьтесь, пожалуйста'
+                and hdr.lower() != u'реклама'
+                and u'был' not in hdr.lower()):
+                headers.append(hdr)
+        return headers
     htmlpath = 'usrs.rzn.html'
     jsonpath = 'usrs.rzn.json'
     jfpath = d2dbpath(jsonpath)
@@ -437,16 +492,18 @@ def d2usrsrzndetails():
         u['communities'].extend(ucmuadm(html))
         u.update({'ads': []})
         u['ads'].extend(uads(html))
+        u.update({'headers': []})
+        u['headers'].extend(uheaders(html))
         d2dbw(u'{}/{}'.format(jsonpath, usr), d2jdump(u))
 
-# 1. getting cars list
-d2cars()
-
-# 2. getting d2 rzn users
-d2usrsrzn()
-
-# 3. getting d2 rzn users html
-d2usrsrznhtml()
+## 1. getting cars list
+#d2cars()
+#
+## 2. getting d2 rzn users
+#d2usrsrzn()
+#
+## 3. getting d2 rzn users html
+#d2usrsrznhtml()
 
 # 4. getting d2 rzn users json
 d2usrsrzndetails()
