@@ -118,8 +118,11 @@ def d2usrsrznhtml():
     uc = len(usrs)
     for i, usr in enumerate(usrs):
         print 'downloading html {} from {}: {}'.format(i + 1, uc, usr)
-        d2dbw(u'{}/{}'.format(htmlpath, usr), unicode(d2html(u'https://www.drive2.ru/users/{}'.format(usr)), 'utf-8'))
-    
+        try:
+            d2dbw(u'{}/{}'.format(htmlpath, usr), unicode(d2html(u'https://www.drive2.ru/users/{}'.format(usr)), 'utf-8'))
+        except Exception as e:
+            print ' ! Error "{}"'.format(str(e))
+
 def d2usrsrzndetails():
     def clean(text):
         return re.compile(u'\s\s+', flags = re.U).sub(
@@ -130,31 +133,30 @@ def d2usrsrzndetails():
             )
         ).replace(u' ;', u';').strip()
     def hasheader(h, html):
-        return len(d2re(u'<h\d+[^>]+>[^<]*{}'.format(h), html, False)) > 0
+        return len(d2re(u'<h\d+[^>]*>[^<]*{}'.format(h), html, False)) > 0
     def uinfo(usr, html):
         u = {}
         r = u"""
-        <div class="c-user-card c-user-card--h c-user-card--main c-user-info__user" itemscope itemtype="http://schema.org/Person">
-            <div class="c-user-card__pic-container">
-                <div class="c-user-card__pic"><a href="[^"]+"><img src="(?P<img>[^"]+)" width="200" height="200" itemprop="image" alt=""></a></div>
-            </div>
-            <div class="c-user-card__body">
-                <h1 class="c-header-main c-user-card__username">
-                    <span class="c-user-card__username-url">
-                        <a class="c-link c-link--white c-username" href="[^"]+" itemprop="url"><span itemprop="name">(?P<nameu>[^<]+)</span></a>
+\s+<div class="c-user-card c-user-card--h c-user-card--main c-user-info__user"[^>]+>
+\s+<div class="c-user-card__pic-container">
+\s+<a href="[^"]+">.+?<img src="(?P<img>[^"]+)"[^>]+>.+?</a>
+\s+</div>
+\s+<div class="c-user-card__body">
+\s+<h1 class="c-header-main c-user-card__username">
+\s+<span class="c-user-card__username-url">
+\s+<a class="c-link c-link--white c-username" href="[^"]+" itemprop="url"><span itemprop="name">(?P<nameu>[^<]+)</span></a>
 .+?
-                </h1>
-                <div class="c-user-card__info">
+\s+</h1>
+\s+<div class="c-user-card__info">
 (?P<hdescr>.+?)
-                </div>
-            </div>
-        </div>
-
-        <div class="o-ibc c-user-info__nums">
-            <a class="c-round-num-block c-round-num-block--followers" href="[^"]+"><strong id="user-followers">(?P<cfollowers>\d+)</strong> <span id="user-followers-legend">Читател[^<]+</span></a>
-            <a class="c-round-num-block" href="[^"]+"><strong>(?P<cfollowing>\d+)</strong> <span>Челове[^<]+<br />читает</span></a>
-            <a class="c-round-num-block" href="[^"]+"><strong>(?P<ccarfollowing>\d+)</strong> <span>Маши[^<]+<br />читает</span></a>
-        </div>
+\s+</div>
+\s+</div>
+\s+</div>
+\s+<div class="o-ibc c-user-info__nums">
+\s+<a class="c-round-num-block c-round-num-block--followers" href="[^"]+"><strong id="user-followers">(?P<cfollowers>\d+)</strong> <span id="user-followers-legend">Читател[^<]+</span></a>
+\s+<a class="c-round-num-block" href="[^"]+"><strong>(?P<cfollowing>\d+)</strong> <span>Челове[^<]+<br />читает</span></a>
+\s+<a class="c-round-num-block" href="[^"]+"><strong>(?P<ccarfollowing>\d+)</strong> <span>Маши[^<]+<br />читает</span></a>
+\s+</div>
 """.replace('\n', '\\r\\n')
         ucard = d2re(r, html)
         if len(ucard) == 0: raise Exception('ucard not found')
@@ -214,10 +216,11 @@ def d2usrsrzndetails():
         if not uabout['habout'] is None:
             about = clean(uabout['habout'])
         u.update({
-            'img': ucard['img'].replace('-200', '-100'),
+            'img': ucard['img'],
             'usr': usr,
+            'nameu': ucard['nameu'],
             'descr': clean(ucard['hdescr']),
-            'aimg': aimg.replace('-960', '-120'),
+            'aimg': aimg,
             'about': about,
             'rdate': str(rdt),
             'stats': clean(uabout['hstats']),
@@ -486,6 +489,7 @@ def d2usrsrzndetails():
         u.update({'cars': []})
         u['cars'].extend(ucar(html))
         u['cars'].extend(ucars(html))
+        u['cars'].extend(ucarformer(html))
         u['cars'].extend(ucarsformer(html))
         u.update({'communities': []})
         u['communities'].extend(ucmu(html))
@@ -496,14 +500,14 @@ def d2usrsrzndetails():
         u['headers'].extend(uheaders(html))
         d2dbw(u'{}/{}'.format(jsonpath, usr), d2jdump(u))
 
-## 1. getting cars list
-#d2cars()
-#
-## 2. getting d2 rzn users
-#d2usrsrzn()
-#
-## 3. getting d2 rzn users html
-#d2usrsrznhtml()
+# 1. getting cars list
+d2cars()
+
+# 2. getting d2 rzn users
+d2usrsrzn()
+
+# 3. getting d2 rzn users html
+d2usrsrznhtml()
 
 # 4. getting d2 rzn users json
 d2usrsrzndetails()
