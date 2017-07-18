@@ -2,28 +2,28 @@
 # -*- coding: utf-8 -*-
 
 import os, json, codecs, datetime
-from d2lib import d2dbpath
-from d2lib import d2dbr
-from d2lib import d2dbw
+from aslib import asdbpath
+from aslib import asdbr
+from aslib import asdbw
 
-def upage(pn, hn, fltfirst = None, srt = None, fltlast = None):
+def aspage(pn, hn, fltfirst = None, srt = None, fltlast = None):
     def cut(s):
         c = 2000
         return (s[:(c - 3)] + '...') if len(s) > c else s
 
     print u'generaring page "{}" - {}'.format(pn, hn)
     jsonpath = 'usrs.rzn.json'
-    us = os.listdir(d2dbpath(jsonpath))
+    us = os.listdir(asdbpath(jsonpath))
     if fltfirst is not None:
         us = fltfirst(us)
     if srt is not None:
         srt(us)
     if fltlast is not None:
         us = fltlast(us)
-    d2dir = '/home/z101/repos/swerc/sites/default/d2'
-    if not os.path.exists(d2dir):
-        os.makedirs(d2dir)
-    page = os.path.join(d2dir, '{}.tpl'.format(pn))
+    asdir = '/home/z101/repos/swerc/sites/default/as'
+    if not os.path.exists(asdir):
+        os.makedirs(asdir)
+    page = os.path.join(asdir, '{}.tpl'.format(pn))
     with codecs.open(page, 'w+', 'utf-8') as f:
         f.write(u"""
 <h3>{header}</h3>
@@ -44,7 +44,7 @@ def upage(pn, hn, fltfirst = None, srt = None, fltlast = None):
 %
 """.format(header = hn))
         for i, u in enumerate(us):
-            u = json.loads(d2dbr('usrs.rzn.json/{}'.format(u)))
+            u = json.loads(asdbr('usrs.rzn.json/{}'.format(u)))
             f.write(u"""
     <tr>
         <td>{i}</td>
@@ -117,7 +117,7 @@ def upage(pn, hn, fltfirst = None, srt = None, fltlast = None):
         f.write(u'</table>')
 
 def ru(u):
-    return json.loads(d2dbr('usrs.rzn.json/{}'.format(u)))
+    return json.loads(asdbr('usrs.rzn.json/{}'.format(u)))
 
 # PAGES
 
@@ -162,35 +162,35 @@ def hasinterest(u):
             or u'модерн' in data
     )
 
-#upage(
+#aspage(
 #    'uflw',
 #    'Ryazan Users: Max Followers',
 #    srt = lambda us: us.sort(key = lambda u: int(ru(u)['counters']['followers']), reverse = True),
 ##    fltlast = lambda us: us[:500],
 #)
 #
-#upage(
+#aspage(
 #    'ulast',
 #    'Ryazan Users: Last 50',
 #    srt = lambda us: us.sort(key = lambda u: datetime.datetime.strptime(ru(u)['rdate'], '%Y-%m-%d'), reverse = True),
 #    fltlast = lambda us: us[:50],
 #)
 #
-#upage(
+#aspage(
 #    'unac',
 #    'Ryazan Users: Nissan Almera Classic',
 #    fltfirst = lambda us: filter(lambda u: hasnac(u), us),
 #    srt = lambda us: us.sort(key = lambda u: int(ru(u)['counters']['followers']), reverse = True),
 #)
 #
-#upage(
+#aspage(
 #    'ugar',
 #    'Ryazan Users: Garage',
 #    fltfirst = lambda us: filter(lambda u: hasgarage(u), us),
 #    srt = lambda us: us.sort(key = lambda u: int(ru(u)['counters']['followers']), reverse = True),
 #)
 
-upage(
+aspage(
     'uint',
     'Ryazan Users: Interesting',
     fltfirst = lambda us: filter(lambda u: hasinterest(u), us),
